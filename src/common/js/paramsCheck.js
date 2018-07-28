@@ -38,6 +38,7 @@ const email = [
 ]
 
 export const isValidPassword = (param) => {
+  if(!param) return new EMs(false, '密码不得为空！')
   param += ''
   if(param.length < 6){
     return new EMs(false, '密码长度不得小于 6 ！')
@@ -49,6 +50,7 @@ export const isValidPassword = (param) => {
 }
 
 export const isValidAccount = (param) => {
+  if(!param) return new EMs(false, '账号不得为空！')
   param += ''
   if(param.length < 3){
     return new EMs(false, '账号长度不得小于 3 ！')
@@ -60,6 +62,7 @@ export const isValidAccount = (param) => {
 }
 
 export const isValidEmail = (param) => {
+  if(!param) return new EMs(false, '邮箱不得为空！')
   param += ''
   var r = email.some((e) => {
     var reg = new RegExp(e + '$')

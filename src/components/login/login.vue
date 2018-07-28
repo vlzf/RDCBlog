@@ -30,14 +30,21 @@
         <label class="alarm" alarm-id="4">{{errMs[4]}}</label>
         <input type="password" placeholder="确认密码" v-model="confirmPassword">
         <label class="alarm" alarm-id="5">{{errMs[5]}}</label>
-        <div class="check-box">
-          <input class="ipnut-left" type="password" placeholder="确认密码" v-model="checkCode">
-          <button class="btn-right">{{resendCodeTime?resendCodeTime+'s后可重发':'发送'}}</button>
+        <div class="check-box" 
+          v-show="errMs[2]==='' && accountR && errMs[3]==='' && emailR"
+        >
+          <input class="ipnut-left" type="text" placeholder="输入验证码" v-model="checkCode">
+          <button class="btn-right"
+            @click="getCheckCode"
+          >{{resendCodeTime?resendCodeTime+'s后重发':'获取'}}</button>
         </div>
         <div class="text-center">
           <button class="cannel"
             @click="changeIndex(1)"
-          >返回</button><button class="submit">注册</button>
+          >返回</button>
+          <button class="submit"
+            @click="register"
+          >注册</button>
         </div>
       </div>
       <div class="find-back-box"
@@ -60,6 +67,7 @@
 
 <script>
 import { isValidPassword, isValidAccount, isValidEmail } from '@/common/js/paramsCheck'
+import axios from 'axios'
 
 const MAX_TIME = 60
 export default {
@@ -157,6 +165,69 @@ export default {
     },
     changeIndex(index){
       this.windowIndex = index
+    },
+    register(){
+      var t = this
+      var accountR = t.accountR,
+      emailR = t.emailR,
+      passwordR = t.passwordR,
+      checkCode = t.checkCode
+      if(t.errMs.slice(2,6).some((e)=>{
+        return e !== ''
+      })) {
+        return
+      }
+      if(!accountR || !emailR || !passwordR || !checkCode) return
+      axios({
+        url: '/blog/api/register',
+        method: 'post',
+        responseType: 'json',
+        data: {
+          account: accountR + '',
+          email: emailR + '',
+          password: passwordR + '',
+          checkCode: checkCode - ''
+        }
+      }).then((d)=>{
+        d = d.data
+        console.log(d)
+        if(d.code) {
+          t.changeIndex(1)
+        }
+      }).catch((e)=>{
+        throw e
+      })
+    },
+    getCheckCode(){
+      var t = this
+      if(t.errMs[2]==='' && t.accountR && t.errMs[3]==='' && t.emailR && t.resendCodeTime === 0){
+        axios({
+          url: '/blog/api/checkCode',
+          method: 'post',
+          responseType: 'json',
+          data: {
+            account: t.accountR + '',
+            email: t.emailR + ''
+          }
+        }).then((d)=>{
+          d = d.data
+          console.log(d)
+          if(d.code){
+            t.setResendCodeTime()
+          }
+        }).catch((e)=>{
+          throw e
+        })
+      }
+    },
+    setResendCodeTime(){
+      this.resendCodeTime = 60
+      clearInterval(this.setResendCodeTimeTimer)
+      this.setResendCodeTimeTimer = setInterval(()=>{
+        if(-- this.resendCodeTime === 0) {
+          clearInterval(this.setResendCodeTimeTimer)
+        }
+      },1000)
     }
   }
 }
@@ -208,6 +279,7 @@ div.text-center {
 }
 
 .check-box {
+  margin-bottom: 10px;
   position: relative;
   &>.input-left {
     padding-right: 100px;
@@ -220,6 +292,7 @@ div.text-center {
     right: 0;
     margin: 0;
     width: 100px;
+    font-size: 13px;
     @extend button.submit;
   }
 }
